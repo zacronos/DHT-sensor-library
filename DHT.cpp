@@ -98,8 +98,15 @@ float DHT::readHumidity(void) {
 }
 
 float DHT::computeHeatIndex(float tempFahrenheit, float percentHumidity) {
-	// Adapted from equation at: https://github.com/adafruit/DHT-sensor-library/issues/9 and
-	// Wikipedia: http://en.wikipedia.org/wiki/Heat_index
+	// Adapted from equation at:
+	//     https://github.com/adafruit/DHT-sensor-library/issues/9
+	// and
+	//     Wikipedia: http://en.wikipedia.org/wiki/Heat_index
+	//
+	// This formula computes the heat index +/- 1.3F vs the heat index table
+	// provided by the NOAA, but is only considered accurate for temperatures
+	// >= 80F and relative humidities >= 40%; in other words, this only works
+	// in warm, humid weather.
 
 	float tempFahrenheitSquared = pow(tempFahrenheit, 2);
 	float percentHumiditySquared = pow(percentHumidity, 2);

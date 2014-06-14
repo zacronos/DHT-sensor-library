@@ -24,33 +24,50 @@ void DHT::begin(void) {
 	_lastreadtime = 0;
 }
 
-//boolean S == Scale.	True == Farenheit; False == Celcius
-float DHT::readTemperature(bool S) {
-	float f;
+// convenience function to combine read() and getTemperatureCelsius()
+float DHT::readTemperatureCelsius() {
+	// read in raw data, and check for failure
+	if (!read()) {
+		return NAN;
+	}
+	return getTemperatureCelsius();
+}
 
-	if (read()) {
-		switch (_type) {
+// get temperature value from raw data buffer
+float DHT::getTemperatureCelsius() {
+	float temperature;
+
+	// different versions of the sensor yield data in different formats
+	switch (_type) {
 		case DHT11:
-			f = data[2];
-			if(S)
-				f = convertCelsiusToFahrenheit(f);
-				
-			return f;
+			// data is in whole degrees, and fits in a byte, convenient!
+			return data[2];
 		case DHT22:
 		case DHT21:
-			f = data[2] & 0x7F;
-			f *= 256;
-			f += data[3];
-			f /= 10;
-			if (data[2] & 0x80)
-				f *= -1;
-			if(S)
-				f = convertCelsiusToFahrenheit(f);
+			// mask the sign bit off data[2], then shift it left 8 bits,
+			// and drop data[3] into the low-order byte
+			temperature = ((data[2] & 0x7F) << 8) ^ data[3];
+			// put the correct sign on the float value
+			if (data[2] & 0x80) {
+				temperature *= -1;
+			}
+			// raw data is tenths of degrees, so scale the result
+			temperature /= 10;
 
-			return f;
-		}
+			return temperature;
 	}
-	return NAN;
+}
+
+// convenience function for Fahrenheit
+float DHT::readTemperatureFahrenheit() {
+	// will this work correctly when readTemperatureCelsius() returns NAN?
+	// TODO: refresh memory on math involving NAN, and possibly fix here
+	return convertCelsiusToFahrenheit(readTemperatureCelsius());
+}
+
+// convenience function for Fahrenheit
+float DHT::getTemperatureFahrenheit() {
+	return convertCelsiusToFahrenheit(getTemperatureCelsius());
 }
 
 float DHT::convertCelsiusToFahrenheit(float celsius) {

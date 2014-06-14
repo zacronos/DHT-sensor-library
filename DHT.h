@@ -6,11 +6,15 @@
  #include "WProgram.h"
 #endif
 
-/* DHT library 
-
-MIT license
-written by Adafruit Industries
-*/
+/***************************************************************************
+ * DHT sensor library
+ * https://github.com/zacronos/DHT-sensor-library
+ * (re)written by Joe Ibershoff
+ * distributed under MIT license
+ *
+ * based on the library originally written by Adafruit Industries
+ * https://github.com/adafruit/DHT-sensor-library
+ ***************************************************************************/
 
 // how many timing transitions we need to keep track of. 2 * number bits + extra
 #define MAXTIMINGS 85

@@ -1,8 +1,12 @@
-/* DHT library 
-
-MIT license
-written by Adafruit Industries
-*/
+/***************************************************************************
+ * DHT sensor library
+ * https://github.com/zacronos/DHT-sensor-library
+ * (re)written by Joe Ibershoff
+ * distributed under MIT license
+ *
+ * based on the library originally written by Adafruit Industries
+ * https://github.com/adafruit/DHT-sensor-library
+ ***************************************************************************/
 
 #include "DHT.h"
 

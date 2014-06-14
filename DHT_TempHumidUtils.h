@@ -11,16 +11,22 @@
  * https://github.com/adafruit/DHT-sensor-library
  ***************************************************************************/
 
+// TODO: can you do static classes in Arduino code?
 static class DHT_TempHumidUtils {
-	private:
-		static float computeHeatIndexRothfusz(float tempFahrenheit, float percentHumidity);
-
 	public:
 		static float convertCelsiusToFahrenheit(float celsius);
 		static float convertFahrenheitToCelsius(float fahrenheit);
 
+		// Correct to +/- 1.3F when temp >= 80 and humidity >= 40; error is
+		// possibly larger outside that range
 		static float computeHeatIndexFahrenheit(float tempFahrenheit, float percentHumidity);
+
+		// This has the same error as above, converted to +/- 0.7222C
 		static float computeHeatIndexCelsius(float tempCelsius, float percentHumidity);
+
+	private:
+		// used by the public computeHeadIndex functions
+		static float computeHeatIndexRothfusz(float tempFahrenheit, float percentHumidity);
 };
 
 #endif

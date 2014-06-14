@@ -19,6 +19,9 @@ static float DHT_TempHumidUtils::convertFahrenheitToCelsius(float fahrenheit) {
 }
 
 static float DHT_TempHumidUtils::computeHeatIndexFahrenheit(float tempFahrenheit, float percentHumidity) {
+	// Correct to +/- 1.3F when temp >= 80 and humidity >= 40; error is
+    // possibly larger outside that range
+	//
 	// Adapted from equations at:
 	//     http://www.hpc.ncep.noaa.gov/html/heatindex_equation.shtml
 	// and javascript code from:
@@ -36,6 +39,7 @@ static float DHT_TempHumidUtils::computeHeatIndexFahrenheit(float tempFahrenheit
 	//
 	// There are some alternative equations available at:
 	//     http://en.wikipedia.org/wiki/Heat_index#Formula
+
 
 	float heatIndex;
 
@@ -70,7 +74,8 @@ static float DHT_TempHumidUtils::computeHeatIndexFahrenheit(float tempFahrenheit
 	return heatIndex;
 }
 
-// convenience function for Celsius
 static float DHT_TempHumidUtils::computeHeatIndexCelsius(float tempCelsius, float percentHumidity) {
+	// Correct to +/- 0.7222C when temp >= 80 and humidity >= 40; error is
+    // possibly larger outside that range
 	return convertFahrenheitToCelsius(computeHeatIndexFahrenheit(convertCelsiusToFahrenheit(tempCelsius), percentHumidity));
 }

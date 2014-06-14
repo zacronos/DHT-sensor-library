@@ -38,11 +38,24 @@ class DHT {
 		DHT(uint8_t pin, uint8_t type, uint8_t count=6);
 		void begin();
 
+		// depending on the sensor type, temperature is correct to within:
+		//     DHT11: +/- 2.0 degrees C
+		//     DHT21: +/- 1.0 degree C
+		//     DHT22: +/- 0.2 degrees C
 		float getTemperatureCelsius();
-		float getTemperatureFahrenheit();
 		float readTemperatureCelsius();
+
+		// depending on the sensor type, temperature is correct to within:
+		//     DHT11: +/- 3.60 degrees F
+		//     DHT21: +/- 1.80 degrees F
+		//     DHT22: +/- 0.36 degrees F
+		float getTemperatureFahrenheit();
 		float readTemperatureFahrenheit();
 
+		// depending on the sensor type, percent humidity is correct to within:
+		//     DHT11: +/- 5%
+		//     DHT21: +/- 3% to 5%
+		//     DHT22: +/- 2% to 5%
 		float readHumidity();
 
 		boolean read();

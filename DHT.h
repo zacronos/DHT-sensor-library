@@ -6,6 +6,8 @@
  #include "WProgram.h"
 #endif
 
+#include "DHT_TempHumidUtils.h"
+
 /***************************************************************************
  * DHT sensor library
  * https://github.com/zacronos/DHT-sensor-library
@@ -32,8 +34,6 @@ class DHT {
 		unsigned long _lastreadtime;
 		boolean firstreading;
 
-		float computeHeatIndexRothfusz(float tempFahrenheit, float percentHumidity);
-
 	public:
 		DHT(uint8_t pin, uint8_t type, uint8_t count=6);
 		void begin();
@@ -43,13 +43,9 @@ class DHT {
 		float readTemperatureCelsius();
 		float readTemperatureFahrenheit();
 
-		float convertCelsiusToFahrenheit(float celsius);
-		float convertFahrenheitToCelsius(float fahrenheit);
-
-		float computeHeatIndexFahrenheit(float tempFahrenheit, float percentHumidity);
-		float computeHeatIndexCelsius(float tempCelsius, float percentHumidity);
 		float readHumidity();
 
 		boolean read();
 };
+
 #endif

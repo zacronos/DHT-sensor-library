@@ -53,6 +53,10 @@ float DHT::convertCelsiusToFahrenheit(float celsius) {
 	return celsius * 1.8 + 32;
 }
 
+float DHT::convertFahrenheitToCelsius(float fahrenheit) {
+	return (fahrenheit - 32) * 0.5555555555555556;
+}
+
 float DHT::readHumidity(void) {
 	float f;
 	if (read()) {

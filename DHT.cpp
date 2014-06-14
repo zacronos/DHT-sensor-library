@@ -97,7 +97,7 @@ float DHT::readHumidity(void) {
 	return NAN;
 }
 
-float DHT::computeHeatIndex(float tempFahrenheit, float percentHumidity) {
+float DHT::computeHeatIndexFahrenheit(float tempFahrenheit, float percentHumidity) {
 	// Adapted from equations at:
 	//     http://www.hpc.ncep.noaa.gov/html/heatindex_equation.shtml
 	// and javascript code from:
@@ -149,7 +149,13 @@ float DHT::computeHeatIndex(float tempFahrenheit, float percentHumidity) {
 	return heatIndex;
 }
 
+// convenience function for Celsius
+float computeHeatIndexCelsius(float tempCelsius, float percentHumidity) {
+	return convertFahrenheitToCelsius(computeHeatIndexFahrenheit(convertCelsiusToFahrenheit(tempCelsius), percentHumidity));
+}
+
 float DHT::computeHeatIndexRothfusz(float tempFahrenheit, float percentHumidity) {
+	// TODO: do I need to declare this private here, or just in the .h?
 	// Adapted from the "Rothfusz regression" equation at:
 	//     https://github.com/adafruit/DHT-sensor-library/issues/9
 	// and

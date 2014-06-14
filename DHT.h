@@ -26,14 +26,17 @@
 
 class DHT {
 	private:
-		uint8_t data[6];
 		uint8_t _pin, _type, _count;
+
+		uint8_t data[6];
 		unsigned long _lastreadtime;
 		boolean firstreading;
 
+		float computeHeatIndexRothfusz(float tempFahrenheit, float percentHumidity);
+
 	public:
 		DHT(uint8_t pin, uint8_t type, uint8_t count=6);
-		void begin(void);
+		void begin();
 
 		float getTemperatureCelsius();
 		float getTemperatureFahrenheit();
@@ -43,9 +46,10 @@ class DHT {
 		float convertCelsiusToFahrenheit(float celsius);
 		float convertFahrenheitToCelsius(float fahrenheit);
 
-		float computeHeatIndex(float tempFahrenheit, float percentHumidity);
-		float readHumidity(void);
+		float computeHeatIndexFahrenheit(float tempFahrenheit, float percentHumidity);
+		float computeHeatIndexCelsius(float tempCelsius, float percentHumidity);
+		float readHumidity();
 
-		boolean read(void);
+		boolean read();
 };
 #endif

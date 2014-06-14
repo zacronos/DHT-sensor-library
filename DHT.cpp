@@ -50,7 +50,7 @@ float DHT::readTemperature(bool S) {
 }
 
 float DHT::convertCtoF(float c) {
-	return c * 9 / 5 + 32;
+	return c * 1.8 + 32;
 }
 
 float DHT::readHumidity(void) {

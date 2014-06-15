@@ -56,7 +56,8 @@ class DHT {
 		//     DHT11: +/- 5%
 		//     DHT21: +/- 3% to 5%
 		//     DHT22: +/- 2% to 5%
-		float readHumidity();
+		float getPercentHumidity();
+		float readPercentHumidity();
 
 		boolean read();
 };

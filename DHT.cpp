@@ -17,7 +17,7 @@ DHT::DHT(uint8_t pin, uint8_t type, uint8_t count) {
 	firstReading_ = true;
 }
 
-void DHT::begin(void) {
+void DHT::begin() {
 	// set up the pins!
 	pinMode(pin_, INPUT);
 	digitalWrite(pin_, HIGH);
@@ -51,7 +51,7 @@ float DHT::getTemperatureCelsius() {
 			if (data_[2] & 0x80) {
 				temperature *= -1;
 			}
-			// raw data is tenths of degrees, so scale the result
+			// raw data is in tenths of degrees, so scale the result
 			temperature /= 10;
 
 			return temperature;
@@ -70,26 +70,35 @@ float DHT::getTemperatureFahrenheit() {
 	return convertCelsiusToFahrenheit(getTemperatureCelsius());
 }
 
-float DHT::readHumidity(void) {
-	float f;
-	if (read()) {
-		switch (type_) {
+// convenience function to combine read() and getPercentHumidity()
+float DHT::readPercentHumidity() {
+	// read in raw data, and check for failure
+	if (!read()) {
+		return NAN;
+	}
+	return getPercentHumidity();
+}
+
+float DHT::getPercentHumidity() {
+	float humidity;
+
+	switch (type_) {
 		case DHT11:
-			f = data_[0];
-			return f;
+			// data is in whole percents, and fits in a byte, convenient!
+			return data_[0];
 		case DHT22:
 		case DHT21:
-			f = data_[0];
-			f *= 256;
-			f += data_[1];
-			f /= 10;
-			return f;
-		}
+			// shift data_[0] left 8 bits, and drop data_[1] into the low-order byte
+			humidity = (data_[0] << 8) ^ data_[1];
+			// raw data is in tenths of a percent, so scale the result
+			humidity /= 10;
+
+			return humidity;
 	}
 	return NAN;
 }
 
-boolean DHT::read(void) {
+boolean DHT::read() {
 	uint8_t laststate = HIGH;
 	uint8_t counter = 0;
 	uint8_t j = 0, i;

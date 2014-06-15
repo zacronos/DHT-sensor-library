@@ -37,18 +37,63 @@ void DHT::begin() {
 	lastReadTime_ = 0;
 }
 
-// convenience function to combine readSensorData() and getTemperatureCelsius()
-float DHT::readTemperatureCelsius() {
-	// read in raw data, and check for failure
-	if (!readSensorData()) {
-		return NAN;
+boolean DHT::readSensorData() {
+	uint8_t byteIndex, bitIndex;
+	unsigned long currentTime;
+	uint8_t bit;
+
+	// Check if sensor was read in the last sample window, and if so return
+	// early to use the values from the last reading
+	currentTime = millis();
+	if (currentTime < lastReadTime_) {
+		// i.e. there was a rollover
+		lastReadTime_ = 0;
 	}
-	return getTemperatureCelsius();
+	if (!firstReading_ && ((currentTime - lastReadTime_) < minSampleDelayMillis_)) {
+		// we're not going to ask the sensor for more data, so just return a
+		// value indicating whether the data currently in the buffer is valid
+		return validData_;
+	}
+	firstReading_ = false;
+
+	// clear the buffer, disable interrupts, signal the sensor, etc
+	if (!prepareRead()) {
+		// something's wrong; turn interrupts back on and bail
+		interrupts();
+		return false;
+	}
+
+	// get our data bits: they come out high-order bits first, so we have to
+	// write them into the buffer "backwards"
+	for (byteIndex = NUM_BYTES-1; byteIndex >= 0; byteIndex--) {
+		for (bitIndex = 7; bitIndex >= 0; bitIndex--) {
+			bit = readBit();
+			if (bit == -1) {
+				// that didn't work; turn interrupts back on and bail
+				interrupts();
+				return false;
+			}
+			// write the bit into the appropriate location in the buffer
+			data_[byteIndex] |= (bit<<bitIndex);
+		}
+	}
+
+	// turn interrupts back on
+	interrupts();
+
+	// test for data validity: data_[4] is a checksum byte, and should equal
+	// the low byte of the sum of the other 4 bytes
+	validData_ = (data_[4] == ((data_[0] + data_[1] + data_[2] + data_[3]) & 0xFF));
+
+	return validData_;
 }
 
-// get temperature value from raw data_ buffer
 float DHT::getTemperatureCelsius() {
 	float temperature;
+
+	if (!validData_) {
+		return NAN;
+	}
 
 	// different versions of the sensor yield data in different formats
 	switch (type_) {
@@ -70,29 +115,16 @@ float DHT::getTemperatureCelsius() {
 	return NAN;
 }
 
-// convenience function for Fahrenheit
-float DHT::readTemperatureFahrenheit() {
-	// will this work correctly when readTemperatureCelsius() returns NAN?
-	// TODO: refresh memory on math involving NAN, and possibly fix here
-	return convertCelsiusToFahrenheit(readTemperatureCelsius());
-}
-
-// convenience function for Fahrenheit
 float DHT::getTemperatureFahrenheit() {
-	return convertCelsiusToFahrenheit(getTemperatureCelsius());
-}
-
-// convenience function to combine readSensorData() and getPercentHumidity()
-float DHT::readPercentHumidity() {
-	// read in raw data, and check for failure
-	if (!readSensorData()) {
-		return NAN;
-	}
-	return getPercentHumidity();
+	return DHT_TempHumidUtils::convertCelsiusToFahrenheit(getTemperatureCelsius());
 }
 
 float DHT::getPercentHumidity() {
 	float humidity;
+
+	if (!validData_) {
+		return NAN;
+	}
 
 	switch (type_) {
 		case DHT11:
@@ -107,6 +139,44 @@ float DHT::getPercentHumidity() {
 	}
 	return NAN;
 }
+
+
+float DHT::readTemperatureCelsius() {
+	// read in raw data, and check for failure
+	if (!readSensorData()) {
+		return NAN;
+	}
+	return getTemperatureCelsius();
+}
+
+float DHT::readTemperatureFahrenheit() {
+	return DHT_TempHumidUtils::convertCelsiusToFahrenheit(readTemperatureCelsius());
+}
+
+float DHT::readPercentHumidity() {
+	// read in raw data, and check for failure
+	if (!readSensorData()) {
+		return NAN;
+	}
+	return getPercentHumidity();
+}
+
+float DHT::readHeatIndexFahrenheit() {
+	// read in raw data, and check for failure
+	if (!readSensorData()) {
+		return NAN;
+	}
+	return DHT_TempHumidUtils::computeHeatIndexFahrenheit(getTemperatureFarenheit(), getRelativeHumidity());
+}
+
+float DHT::readHeatIndexCelsius(){
+	// read in raw data, and check for failure
+	if (!readSensorData()) {
+		return NAN;
+	}
+	return DHT_TempHumidUtils::computeHeatIndexCelsius(getTemperatureCelsius(), getRelativeHumidity());
+}
+
 
 boolean DHT::prepareRead() {
 	int16_t digitalReadCycles;
@@ -214,55 +284,4 @@ int8_t DHT::readBit() {
 
 	// we'll count < 50 microseconds as a "0", and everything else as a "1"
 	return (signalLength < 50)? 0 : 1;
-}
-
-boolean DHT::readSensorData() {
-	uint8_t byteIndex, bitIndex;
-	unsigned long currentTime;
-	uint8_t bit;
-
-	// Check if sensor was read in the last sample window, and if so return
-	// early to use the values from the last reading
-	currentTime = millis();
-	if (currentTime < lastReadTime_) {
-		// i.e. there was a rollover
-		lastReadTime_ = 0;
-	}
-	if (!firstReading_ && ((currentTime - lastReadTime_) < minSampleDelayMillis_)) {
-		// we're not going to ask the sensor for more data, so just return a
-		// value indicating whether the data currently in the buffer is valid
-		return validData_;
-	}
-	firstReading_ = false;
-
-	// clear the buffer, disable interrupts, signal the sensor, etc
-	if (!prepareRead()) {
-		// something's wrong; turn interrupts back on and bail
-		interrupts();
-		return false;
-	}
-
-	// get our data bits: they come out high-order bits first, so we have to
-	// write them into the buffer "backwards"
-	for (byteIndex = NUM_BYTES-1; byteIndex >= 0; byteIndex--) {
-		for (bitIndex = 7; bitIndex >= 0; bitIndex--) {
-			bit = readBit();
-			if (bit == -1) {
-				// that didn't work; turn interrupts back on and bail
-				interrupts();
-				return false;
-			}
-			// write the bit into the appropriate location in the buffer
-			data_[byteIndex] |= (bit<<bitIndex);
-		}
-	}
-
-	// turn interrupts back on
-	interrupts();
-
-	// test for data validity: data_[4] is a checksum byte, and should equal
-	// the low byte of the sum of the other 4 bytes
-	validData_ = (data_[4] == ((data_[0] + data_[1] + data_[2] + data_[3]) & 0xFF));
-
-	return validData_;
 }

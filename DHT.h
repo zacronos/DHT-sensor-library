@@ -23,10 +23,11 @@
 
 // different versions of the sensor; pass one of these in as the "type"
 // parameter when constructing a DHT object
-#define DHT11 11
-#define DHT22 22
-#define DHT21 21
+#define DHT11  11
+#define DHT21  21
 #define AM2301 21
+#define DHT22  22
+#define AM2303 22
 
 // how much data we want to read
 #define NUM_BYTES 5

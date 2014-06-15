@@ -1,5 +1,7 @@
 // Example testing sketch for various DHT humidity/temperature sensors
 // Written by ladyada, public domain
+// Modified by Joe Ibershoff for use with his rewritten version of the DHT
+//     sensor library.
 
 #include "DHT.h"
 

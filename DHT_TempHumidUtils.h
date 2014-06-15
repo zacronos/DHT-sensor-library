@@ -18,8 +18,8 @@ class DHT_TempHumidUtils {
 
 	public:
 
-		static float convertCelsiusToFahrenheit(float celsius);
-		static float convertFahrenheitToCelsius(float fahrenheit);
+		static float convertCelsiusToFahrenheit(float tempCelsius);
+		static float convertFahrenheitToCelsius(float tempFahrenheit);
 
 		// Correct to +/- 1.3F when temp >= 80 and humidity >= 40; error is
 		// possibly larger outside that range

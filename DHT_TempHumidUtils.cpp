@@ -12,12 +12,12 @@
 
 DHT_TempHumidUtils::DHT_TempHumidUtils() {}
 
-/* static */ float DHT_TempHumidUtils::convertCelsiusToFahrenheit(float celsius) {
-	return celsius * 1.8 + 32;
+/* static */ float DHT_TempHumidUtils::convertCelsiusToFahrenheit(float tempCelsius) {
+	return tempCelsius * 1.8 + 32;
 }
 
-/* static */ float DHT_TempHumidUtils::convertFahrenheitToCelsius(float fahrenheit) {
-	return (fahrenheit - 32) * 0.5555555555555556;
+/* static */ float DHT_TempHumidUtils::convertFahrenheitToCelsius(float tempFahrenheit) {
+	return (tempFahrenheit - 32) * 0.5555555555555556;
 }
 
 /* static */ float DHT_TempHumidUtils::computeHeatIndexFahrenheit(float tempFahrenheit, float percentHumidity) {

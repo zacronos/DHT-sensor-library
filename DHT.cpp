@@ -13,10 +13,9 @@
 
 #include "DHT.h"
 
-DHT::DHT(uint8_t pin, uint8_t type, uint8_t count) {
+DHT::DHT(uint8_t pin, uint8_t type) {
 	pin_ = pin;
 	type_ = type;
-	count_ = count;
 	firstReading_ = true;
 	validData_ = false;
 
@@ -38,10 +37,10 @@ void DHT::begin() {
 	lastReadTime_ = 0;
 }
 
-// convenience function to combine read() and getTemperatureCelsius()
+// convenience function to combine readSensorData() and getTemperatureCelsius()
 float DHT::readTemperatureCelsius() {
 	// read in raw data, and check for failure
-	if (!read()) {
+	if (!readSensorData()) {
 		return NAN;
 	}
 	return getTemperatureCelsius();
@@ -66,10 +65,9 @@ float DHT::getTemperatureCelsius() {
 				temperature *= -1;
 			}
 			// raw data is in tenths of degrees, so scale the result
-			temperature /= 10;
-
-			return temperature;
+			return temperature/10.0;
 	}
+	return NAN;
 }
 
 // convenience function for Fahrenheit
@@ -84,10 +82,10 @@ float DHT::getTemperatureFahrenheit() {
 	return convertCelsiusToFahrenheit(getTemperatureCelsius());
 }
 
-// convenience function to combine read() and getPercentHumidity()
+// convenience function to combine readSensorData() and getPercentHumidity()
 float DHT::readPercentHumidity() {
 	// read in raw data, and check for failure
-	if (!read()) {
+	if (!readSensorData()) {
 		return NAN;
 	}
 	return getPercentHumidity();
@@ -105,101 +103,166 @@ float DHT::getPercentHumidity() {
 			// shift data_[0] left 8 bits, and drop data_[1] into the low-order byte
 			humidity = (data_[0] << 8) ^ data_[1];
 			// raw data is in tenths of a percent, so scale the result
-			humidity /= 10;
-
-			return humidity;
+			return humidity/10.0;
 	}
 	return NAN;
 }
 
-boolean DHT::read() {
-	uint8_t laststate = HIGH;
-	uint8_t counter = 0;
-	uint8_t j = 0, i;
-	uint32_t currenttime;
+boolean DHT::prepareRead() {
+	int16_t digitalReadCycles;
 
-	// Check if sensor was read less than two seconds ago and return early
-	// to use last reading.
-	currenttime = millis();
-	if (currenttime < lastReadTime_) {
+	// record current time
+	lastReadTime_ = millis();
+
+	// blank out the buffer
+	data_[0] = data_[1] = data_[2] = data_[3] = data_[4] = 0;
+	
+	// set flag to show we haven't gotten valid data from this read
+	validData_ = false;
+
+	// pull the pin high and wait 250 milliseconds for the sensor to chill out
+	digitalWrite(pin_, HIGH);
+	delay(250);
+
+	// now pull it low for ~20 milliseconds as the start signal
+	pinMode(pin_, OUTPUT);
+	digitalWrite(pin_, LOW);
+	delay(20);
+
+	// turn off interrupts before continuing further
+	noInterrupts();
+
+	// then pull it high for ~40 microseconds
+	digitalWrite(pin_, HIGH);
+	delayMicroseconds(40);
+
+	// now we're ready to read the response signal before the data
+	pinMode(pin_, INPUT);
+
+	// first watch for the sensor to transition away from HIGH
+	if (timeSignalLength(HIGH) == -1) {
+		// we've failed to initialize properly
+		return false;
+	}
+
+	// the sensor will keep the pin LOW for ~80 microseconds
+	if (timeSignalLength(LOW) == -1) {
+		// we've failed to initialize properly
+		return false;
+	}
+
+	// then it will bring the pin HIGH for another ~80 microseconds
+	if (timeSignalLength(HIGH) == -1) {
+		// we've failed to initialize properly
+		return false;
+	}
+
+	// we're done preparing, the next LOW-HIGH cycle will be a real bit
+	return true;
+}
+
+int16_t DHT::timeSignalLength(uint8_t signalState) {
+	unsigned long currentTimeMicros;
+	unsigned long startTimeMicros = micros();
+	unsigned long timeWaiting;
+
+	while (digitalRead(pin_) == signalState) {
+		// watch how long we've been waiting
+		currentTimeMicros = micros();
+		// handle overflows
+		timeWaiting = (currentTimeMicros > startTimeMicros ?
+				currentTimeMicros - startTimeMicros :
+				ULONG_MAX - startTimeMicros + currentTimeMicros );
+		if (timeWaiting > 200) {
+			// there is a problem; the sensor should never leave us hanging
+			// for more than 80 microseconds, and even on devices with a
+			// micros() resolution of 8 microseconds, that means we shouldn't
+			// see an apparent delay of longer than 96 microseconds... but
+			// we'll cut it some slack and wait for up to 200 microseconds
+			return -1;
+		}
+		delayMicroseconds(1);
+	}
+
+	// get the final observed wait
+	currentTimeMicros = micros();
+	// handle overflows
+	timeWaiting = ( currentTimeMicros > startTimeMicros ?
+			currentTimeMicros - startTimeMicros :
+			ULONG_MAX - startTimeMicros + currentTimeMicros );
+	return (uint16_t)timeWaiting;
+}
+
+int8_t DHT::readBit() {
+	int16_t signalLength;
+
+	// first, we should get a LOW signal for ~50 microseconds
+	signalLength = timeSignalLength(LOW);
+	if (signalLength == -1) {
+		// we never saw the end of the signal, oops
+		return -1;
+	}
+
+	// then, we should get a HIGH signal for:
+	//     ~26-28 microseconds for a "0" bit
+	//     ~70 microseconds for a "1" bit
+	signalLength = timeSignalLength(HIGH);
+	if (signalLength == -1) {
+		// we never saw the end of the signal, oops
+		return -1;
+	}
+
+	// we'll count < 50 microseconds as a "0", and everything else as a "1"
+	return (signalLength < 50)? 0 : 1;
+}
+
+boolean DHT::readSensorData() {
+	uint8_t byteIndex, bitIndex;
+	unsigned long currentTime;
+	uint8_t bit;
+
+	// Check if sensor was read in the last sample window, and if so return
+	// early to use the values from the last reading
+	currentTime = millis();
+	if (currentTime < lastReadTime_) {
 		// i.e. there was a rollover
 		lastReadTime_ = 0;
 	}
-	if (!firstReading_ && ((currenttime - lastReadTime_) < minSampleDelayMillis_)) {
+	if (!firstReading_ && ((currentTime - lastReadTime_) < minSampleDelayMillis_)) {
 		// we're not going to ask the sensor for more data, so just return a
 		// value indicating whether the data currently in the buffer is valid
 		return validData_;
 	}
 	firstReading_ = false;
 
-	// set flag to show we haven't gotten valid data from this read
-	validData_ = false;
+	// clear the buffer, disable interrupts, signal the sensor, etc
+	if (!prepareRead()) {
+		// something's wrong; turn interrupts back on and bail
+		interrupts();
+		return false;
+	}
 
-	/*
-		Serial.print("Currtime: "); Serial.print(currenttime);
-		Serial.print(" Lasttime: "); Serial.print(lastReadTime_);
-	*/
-	lastReadTime_ = millis();
-
-	data_[0] = data_[1] = data_[2] = data_[3] = data_[4] = 0;
-	
-	// pull the pin high and wait 250 milliseconds
-	digitalWrite(pin_, HIGH);
-	delay(250);
-
-	// now pull it low for ~20 milliseconds
-	pinMode(pin_, OUTPUT);
-	digitalWrite(pin_, LOW);
-	delay(20);
-	noInterrupts();
-	digitalWrite(pin_, HIGH);
-	delayMicroseconds(40);
-	pinMode(pin_, INPUT);
-
-	// read in timings
-	for ( i=0; i< MAXTIMINGS; i++) {
-		counter = 0;
-		while (digitalRead(pin_) == laststate) {
-			counter++;
-			delayMicroseconds(1);
-			if (counter == 255) {
-				break;
+	// get our data bits: they come out high-order bits first, so we have to
+	// write them into the buffer "backwards"
+	for (byteIndex = NUM_BYTES-1; byteIndex >= 0; byteIndex--) {
+		for (bitIndex = 7; bitIndex >= 0; bitIndex--) {
+			bit = readBit();
+			if (bit == -1) {
+				// that didn't work; turn interrupts back on and bail
+				interrupts();
+				return false;
 			}
+			// write the bit into the appropriate location in the buffer
+			data_[byteIndex] |= (bit<<bitIndex);
 		}
-		laststate = digitalRead(pin_);
-
-		if (counter == 255) break;
-
-		// ignore first 3 transitions
-		if ((i >= 4) && (i%2 == 0)) {
-			// shove each bit into the storage bytes
-			data_[j/8] <<= 1;
-			if (counter > count_)
-				data_[j/8] |= 1;
-			j++;
-		}
-
 	}
 
+	// turn interrupts back on
 	interrupts();
-	
-	/*
-	Serial.println(j, DEC);
-	Serial.print(data_[0], HEX); Serial.print(", ");
-	Serial.print(data_[1], HEX); Serial.print(", ");
-	Serial.print(data_[2], HEX); Serial.print(", ");
-	Serial.print(data_[3], HEX); Serial.print(", ");
-	Serial.print(data_[4], HEX); Serial.print(" =? ");
-	Serial.println(data_[0] + data_[1] + data_[2] + data_[3], HEX);
-	*/
 
-	// check we read 40 bits and that the checksum matches
-	if ((j >= 40) && 
-			(data_[4] == ((data_[0] + data_[1] + data_[2] + data_[3]) & 0xFF)) ) {
-		// set the flag to show the data is good
-		validData_ = true;
-	}
+	// test for data validity: data_[4] is a checksum byte, and should equal
+	// the low byte of the sum of the other 4 bytes
+	validData_ = (data_[4] == ((data_[0] + data_[1] + data_[2] + data_[3]) & 0xFF));
 
 	return validData_;
-
 }

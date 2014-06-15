@@ -21,26 +21,21 @@
  * https://github.com/glennra/DHT-sensor-library
  ***************************************************************************/
 
-// how many timing transitions we need to keep track of. 2 * number bits + extra
-#define MAXTIMINGS 85
-
+// different versions of the sensor; pass one of these in as the "type"
+// parameter when constructing a DHT object
 #define DHT11 11
 #define DHT22 22
 #define DHT21 21
 #define AM2301 21
 
-class DHT {
-	private:
-		uint8_t pin_, type_, count_;
+// how much data we want to read
+#define NUM_BYTES 5
 
-		uint8_t minSampleDelayMillis_;
-		uint8_t data_[6];
-		uint32_t lastReadTime_;
-		boolean firstReading_;
-		boolean validData_;
+class DHT {
 
 	public:
-		DHT(uint8_t pin, uint8_t type, uint8_t count=6);
+
+		DHT(uint8_t pin, uint8_t type);
 		void begin();
 
 		// depending on the sensor type, temperature is correct to within:
@@ -64,7 +59,23 @@ class DHT {
 		float getPercentHumidity();
 		float readPercentHumidity();
 
-		boolean read();
+		boolean readSensorData();
+
+
+	private:
+
+		uint8_t pin_, type_;
+
+		uint8_t minSampleDelayMillis_;
+		uint8_t data_[6];
+		unsigned long lastReadTime_;
+		boolean firstReading_;
+		boolean validData_;
+
+		boolean prepareRead();
+		int16_t timeSignalLength(uint8_t signalState);
+		int8_t readBit();
+
 };
 
 #endif

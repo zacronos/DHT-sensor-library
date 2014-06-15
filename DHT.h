@@ -16,6 +16,9 @@
  *
  * based on the library originally written by Adafruit Industries
  * https://github.com/adafruit/DHT-sensor-library
+ *
+ * fix for readings shortly after a failure based on Glenn Ramsey's fork
+ * https://github.com/glennra/DHT-sensor-library
  ***************************************************************************/
 
 // how many timing transitions we need to keep track of. 2 * number bits + extra
@@ -34,6 +37,7 @@ class DHT {
 		uint8_t data_[6];
 		uint32_t lastReadTime_;
 		boolean firstReading_;
+		boolean validData_;
 
 	public:
 		DHT(uint8_t pin, uint8_t type, uint8_t count=6);

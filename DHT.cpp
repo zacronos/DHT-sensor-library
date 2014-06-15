@@ -6,6 +6,9 @@
  *
  * based on the library originally written by Adafruit Industries
  * https://github.com/adafruit/DHT-sensor-library
+ *
+ * fix for readings shortly after a failure based on Glenn Ramsey's fork
+ * https://github.com/glennra/DHT-sensor-library
  ***************************************************************************/
 
 #include "DHT.h"
@@ -15,6 +18,7 @@ DHT::DHT(uint8_t pin, uint8_t type, uint8_t count) {
 	type_ = type;
 	count_ = count;
 	firstReading_ = true;
+	validData_ = false;
 
 	switch (type_) {
 		case DHT11:
@@ -122,9 +126,15 @@ boolean DHT::read() {
 		lastReadTime_ = 0;
 	}
 	if (!firstReading_ && ((currenttime - lastReadTime_) < minSampleDelayMillis_)) {
-		return true; // return last correct measurement
+		// we're not going to ask the sensor for more data, so just return a
+		// value indicating whether the data currently in the buffer is valid
+		return validData_;
 	}
 	firstReading_ = false;
+
+	// set flag to show we haven't gotten valid data from this read
+	validData_ = false;
+
 	/*
 		Serial.print("Currtime: "); Serial.print(currenttime);
 		Serial.print(" Lasttime: "); Serial.print(lastReadTime_);
@@ -186,10 +196,10 @@ boolean DHT::read() {
 	// check we read 40 bits and that the checksum matches
 	if ((j >= 40) && 
 			(data_[4] == ((data_[0] + data_[1] + data_[2] + data_[3]) & 0xFF)) ) {
-		return true;
+		// set the flag to show the data is good
+		validData_ = true;
 	}
-	
 
-	return false;
+	return validData_;
 
 }

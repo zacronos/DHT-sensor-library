@@ -28,11 +28,11 @@
 
 class DHT {
 	private:
-		uint8_t _pin, _type, _count;
+		uint8_t pin_, type_, count_;
 
-		uint8_t data[6];
-		unsigned long _lastreadtime;
-		boolean firstreading;
+		uint8_t data_[6];
+		uint32_t lastReadTime_;
+		boolean firstReading_;
 
 	public:
 		DHT(uint8_t pin, uint8_t type, uint8_t count=6);

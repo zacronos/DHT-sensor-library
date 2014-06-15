@@ -58,7 +58,7 @@ static float DHT_TempHumidUtils::computeHeatIndexFahrenheit(float tempFahrenheit
 		return heatIndex;
 	}
 
-	heatIndex = heatIndexRothfusz(tempFahrenheit, percentHumidity);
+	heatIndex = computeHeatIndexRothfusz(tempFahrenheit, percentHumidity);
 
 	if (percentHumidity < 13.0 && tempFahrenheit >= 80 && tempFahrenheit <= 112) {
 		// an adjustment is made for some very low-humidity conditions
@@ -78,4 +78,35 @@ static float DHT_TempHumidUtils::computeHeatIndexCelsius(float tempCelsius, floa
 	// Correct to +/- 0.7222C when temp >= 80 and humidity >= 40; error is
     // possibly larger outside that range
 	return convertFahrenheitToCelsius(computeHeatIndexFahrenheit(convertCelsiusToFahrenheit(tempCelsius), percentHumidity));
+}
+
+float DHT::computeHeatIndexRothfusz(float tempFahrenheit, float percentHumidity) {
+	// TODO: do I need to declare this private here, or just in the .h?
+	// Adapted from the "Rothfusz regression" equation at:
+	//     https://github.com/adafruit/DHT-sensor-library/issues/9
+	// and
+	//     Wikipedia: http://en.wikipedia.org/wiki/Heat_index
+	//
+	// This formula computes the heat index +/- 1.3F vs the heat index table
+	// provided by the NOAA, but is only considered accurate for temperatures
+	// >= 80F and relative humidities >= 40%; in other words, this only works
+	// in warm, humid weather.
+	//
+	// The NOAA also notes that "The Rothfusz regression is not valid for
+	// extreme temperature and relative humidity conditions", which in context
+	// seems to indicate this equation is inaccurate at very high temperatures
+	// as well, but doesn't go into detail on those limitations.
+
+	float tempFahrenheitSquared = pow(tempFahrenheit, 2);
+	float percentHumiditySquared = pow(percentHumidity, 2);
+
+	return -42.379 +
+			 2.04901523 * tempFahrenheit +
+			10.14333127 * percentHumidity +
+			-0.22475541 * tempFahrenheit * percentHumidity +
+			-0.00683783 * tempFahrenheitSquared +
+			-0.05481717 * percentHumiditySquared +
+			 0.00122874 * tempFahrenheitSquared * percentHumidity +
+			 0.00085282 * tempFahrenheit * percentHumiditySquared +
+			-0.00000199 * tempFahrenheitSquared * percentHumiditySquared;
 }

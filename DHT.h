@@ -6,6 +6,7 @@
  #include "WProgram.h"
 #endif
 
+#include "limits.h"
 #include "DHT_TempHumidUtils.h"
 
 /***************************************************************************

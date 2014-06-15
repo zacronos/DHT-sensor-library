@@ -7,8 +7,8 @@
 
 // Uncomment whatever type you're using!
 //#define DHTTYPE DHT11   // DHT 11 
-#define DHTTYPE DHT22   // DHT 22  (AM2302)
 //#define DHTTYPE DHT21   // DHT 21 (AM2301)
+#define DHTTYPE DHT22   // DHT 22  (AM2302)
 
 // Connect pin 1 (on the left) of the sensor to +5V
 // Connect pin 2 of the sensor to whatever your DHTPIN is
@@ -25,36 +25,38 @@ void setup() {
 }
 
 void loop() {
-  // Wait a few seconds between measurements.
+  // Wait a couple seconds between measurements.
   delay(2000);
 
   // Reading temperature or humidity takes about 250 milliseconds!
   // Sensor readings may also be up to 2 seconds 'old' (its a very slow sensor)
-  float h = dht.readHumidity();
+  float humidity = dht.readPercentHumidity();
   // Read temperature as Celsius
-  float t = dht.readTemperature();
+  float temperatureC = dht.readTemperatureCelsius();
   // Read temperature as Fahrenheit
-  float f = dht.readTemperature(true);
+  float temperatureF = dht.readTemperatureFahrenheit();
   
   // Check if any reads failed and exit early (to try again).
-  if (isnan(h) || isnan(t) || isnan(f)) {
+  if (isnan(humidity) || isnan(temperatureC) || isnan(temperatureF)) {
     Serial.println("Failed to read from DHT sensor!");
     return;
   }
 
   // Compute heat index
-  // Must send in temp in Fahrenheit!
-  float hi = dht.computeHeatIndex(f, h);
+  float heatIndexF = dht.readHeatIndexFahrenheit();
+  float heatIndexC = dht.readHeatIndexCelsius();
 
   Serial.print("Humidity: "); 
-  Serial.print(h);
+  Serial.print(humidity);
   Serial.print(" %\t");
   Serial.print("Temperature: "); 
-  Serial.print(t);
-  Serial.print(" *C ");
-  Serial.print(f);
+  Serial.print(temperatureC);
+  Serial.print(" *C / ");
+  Serial.print(temperatureF);
   Serial.print(" *F\t");
   Serial.print("Heat index: ");
-  Serial.print(hi);
+  Serial.print(heatIndexC);
+  Serial.println(" *C / ");
+  Serial.print(heatIndexF);
   Serial.println(" *F");
 }

@@ -10,15 +10,17 @@
 
 #include "DHT_TempHumidUtils.h"
 
-static float DHT_TempHumidUtils::convertCelsiusToFahrenheit(float celsius) {
+DHT_TempHumidUtils::DHT_TempHumidUtils() {}
+
+/* static */ float DHT_TempHumidUtils::convertCelsiusToFahrenheit(float celsius) {
 	return celsius * 1.8 + 32;
 }
 
-static float DHT_TempHumidUtils::convertFahrenheitToCelsius(float fahrenheit) {
+/* static */ float DHT_TempHumidUtils::convertFahrenheitToCelsius(float fahrenheit) {
 	return (fahrenheit - 32) * 0.5555555555555556;
 }
 
-static float DHT_TempHumidUtils::computeHeatIndexFahrenheit(float tempFahrenheit, float percentHumidity) {
+/* static */ float DHT_TempHumidUtils::computeHeatIndexFahrenheit(float tempFahrenheit, float percentHumidity) {
 	// Correct to +/- 1.3F when temp >= 80 and humidity >= 40; error is
     // possibly larger outside that range
 	//
@@ -62,8 +64,7 @@ static float DHT_TempHumidUtils::computeHeatIndexFahrenheit(float tempFahrenheit
 
 	if (percentHumidity < 13.0 && tempFahrenheit >= 80 && tempFahrenheit <= 112) {
 		// an adjustment is made for some very low-humidity conditions
-		// TODO: confirm inclusion/naming of sqrt() and abs() functions
-		return heatIndex + (percentHumidity-13.0)/4.0 * sqrt((17.0-abs(tempFahrenheit-95.0))/17.0);
+		return heatIndex + (percentHumidity-13.0)/4.0 * sqrt((17.0-fabs(tempFahrenheit-95.0))/17.0);
 	}
 
 	if (percentHumidity > 85.0 && tempFahrenheit >= 80 && tempFahrenheit <= 87) {
@@ -74,13 +75,13 @@ static float DHT_TempHumidUtils::computeHeatIndexFahrenheit(float tempFahrenheit
 	return heatIndex;
 }
 
-static float DHT_TempHumidUtils::computeHeatIndexCelsius(float tempCelsius, float percentHumidity) {
+/* static */ float DHT_TempHumidUtils::computeHeatIndexCelsius(float tempCelsius, float percentHumidity) {
 	// Correct to +/- 0.7222C when temp >= 80 and humidity >= 40; error is
     // possibly larger outside that range
 	return convertFahrenheitToCelsius(computeHeatIndexFahrenheit(convertCelsiusToFahrenheit(tempCelsius), percentHumidity));
 }
 
-float DHT::computeHeatIndexRothfusz(float tempFahrenheit, float percentHumidity) {
+float DHT_TempHumidUtils::computeHeatIndexRothfusz(float tempFahrenheit, float percentHumidity) {
 	// TODO: do I need to declare this private here, or just in the .h?
 	// Adapted from the "Rothfusz regression" equation at:
 	//     https://github.com/adafruit/DHT-sensor-library/issues/9

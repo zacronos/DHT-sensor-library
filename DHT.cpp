@@ -166,7 +166,7 @@ float DHT::readHeatIndexFahrenheit() {
 	if (!readSensorData()) {
 		return NAN;
 	}
-	return DHT_TempHumidUtils::computeHeatIndexFahrenheit(getTemperatureFarenheit(), getRelativeHumidity());
+	return DHT_TempHumidUtils::computeHeatIndexFahrenheit(getTemperatureFahrenheit(), getPercentHumidity());
 }
 
 float DHT::readHeatIndexCelsius(){
@@ -174,7 +174,7 @@ float DHT::readHeatIndexCelsius(){
 	if (!readSensorData()) {
 		return NAN;
 	}
-	return DHT_TempHumidUtils::computeHeatIndexCelsius(getTemperatureCelsius(), getRelativeHumidity());
+	return DHT_TempHumidUtils::computeHeatIndexCelsius(getTemperatureCelsius(), getPercentHumidity());
 }
 
 

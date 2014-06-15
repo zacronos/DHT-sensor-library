@@ -30,6 +30,7 @@ class DHT {
 	private:
 		uint8_t pin_, type_, count_;
 
+		uint8_t minSampleDelayMillis_;
 		uint8_t data_[6];
 		uint32_t lastReadTime_;
 		boolean firstReading_;

@@ -15,6 +15,16 @@ DHT::DHT(uint8_t pin, uint8_t type, uint8_t count) {
 	type_ = type;
 	count_ = count;
 	firstReading_ = true;
+
+	switch (type_) {
+		case DHT11:
+			minSampleDelayMillis_ = 1000;
+			break;
+		case DHT22:
+		case DHT21:
+			minSampleDelayMillis_ = 2000;
+			break;
+	}
 }
 
 void DHT::begin() {
@@ -108,12 +118,11 @@ boolean DHT::read() {
 	// to use last reading.
 	currenttime = millis();
 	if (currenttime < lastReadTime_) {
-		// ie there was a rollover
+		// i.e. there was a rollover
 		lastReadTime_ = 0;
 	}
-	if (!firstReading_ && ((currenttime - lastReadTime_) < 2000)) {
+	if (!firstReading_ && ((currenttime - lastReadTime_) < minSampleDelayMillis_)) {
 		return true; // return last correct measurement
-		//delay(2000 - (currenttime - lastReadTime_));
 	}
 	firstReading_ = false;
 	/*

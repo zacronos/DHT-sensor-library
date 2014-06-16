@@ -38,9 +38,9 @@ void DHT::begin() {
 }
 
 boolean DHT::readSensorData() {
-	uint8_t byteIndex, bitIndex;
+	int8_t byteIndex, bitIndex;
 	unsigned long currentTime;
-	uint8_t bit;
+	int8_t bit;
 
 	// Check if sensor was read in the last sample window, and if so return
 	// early to use the values from the last reading
@@ -102,10 +102,20 @@ float DHT::getTemperatureCelsius() {
 			return data_[2];
 		case DHT22:
 		case DHT21:
-			// mask the sign bit off data_[2], then shift it left 8 bits,
-			// and drop data_[3] into the low-order byte
+			// NOTE: negative temperatures are transmitted using 1s-complement
+			// integer format: the highest-order bit indicates the sign of the
+			// number (0==positive, 1==negative), and the rest of the bits
+			// have the same value as they would for the absolute value of the
+			// number in question.
+			// Example: for a 16-bit 1s-complement value, we would have
+			//     0x016F == 0b0000000101101111 ==  367
+			//     0x816F == 0b1000000101101111 == -367
+
+			// mask the sign bit off data_[2], then shift it left 8 bits, and
+			// drop data_[3] into the low-order byte
 			temperature = ((data_[2] & 0x7F) << 8) ^ data_[1];
-			// put the correct sign on the float value
+
+			// Now put the correct sign on the float value
 			if (data_[2] & 0x80) {
 				temperature *= -1;
 			}

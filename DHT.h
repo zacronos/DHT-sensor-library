@@ -100,7 +100,7 @@ class DHT {
 
 		uint8_t pin_, type_;
 
-		uint8_t minSampleDelayMillis_;
+		uint16_t minSampleDelayMillis_;
 		uint8_t data_[6];
 		unsigned long lastReadTime_;
 		boolean firstReading_;

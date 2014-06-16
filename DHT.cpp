@@ -83,7 +83,7 @@ boolean DHT::readSensorData() {
 
 	// test for data validity: data_[4] is a checksum byte, and should equal
 	// the low byte of the sum of the other 4 bytes
-	validData_ = (data_[4] == ((data_[0] + data_[1] + data_[2] + data_[3]) & 0xFF));
+	validData_ = (data_[0] == ((data_[1] + data_[2] + data_[3] + data_[4]) & 0xFF));
 
 	return validData_;
 }
@@ -104,7 +104,7 @@ float DHT::getTemperatureCelsius() {
 		case DHT21:
 			// mask the sign bit off data_[2], then shift it left 8 bits,
 			// and drop data_[3] into the low-order byte
-			temperature = ((data_[2] & 0x7F) << 8) ^ data_[3];
+			temperature = ((data_[2] & 0x7F) << 8) ^ data_[1];
 			// put the correct sign on the float value
 			if (data_[2] & 0x80) {
 				temperature *= -1;
@@ -129,11 +129,11 @@ float DHT::getPercentHumidity() {
 	switch (type_) {
 		case DHT11:
 			// data is in whole percents, and fits in a byte, convenient!
-			return data_[0];
+			return data_[4];
 		case DHT22:
 		case DHT21:
-			// shift data_[0] left 8 bits, and drop data_[1] into the low-order byte
-			humidity = (data_[0] << 8) ^ data_[1];
+			// shift data_[4] left 8 bits, and drop data_[3] into the low-order byte
+			humidity = (data_[4] << 8) ^ data_[3];
 			// raw data is in tenths of a percent, so scale the result
 			return humidity/10.0;
 	}

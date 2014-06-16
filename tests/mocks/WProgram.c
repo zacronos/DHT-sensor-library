@@ -24,8 +24,9 @@ void setTime(unsigned long timeMillis, unsigned int remainderTimeMicros) {
 	remainderTimeMicros_ = remainderTimeMicros;
 }
 
-void setSensorBits(unsigned long bits) {
+void setSensorBits(float celsius, float humidity, int bitFormat) {
 	int j=0;
+	unsigned long bits=0;
 	unsigned int checksum=0;
 
 	signals_[j] = HIGH;
@@ -35,23 +36,32 @@ void setSensorBits(unsigned long bits) {
 	signals_[j] = HIGH;
 	durations_[j++] = 80;
 
+	if (bitFormat == 1) {
+		bits |= (((unsigned short)round(humidity))&0xFF)<<24;
+		bits |= (((unsigned short)round(celsius))&0xFF)<<8;
+	} else if (bitFormat == 2) {
+		bits |= (((unsigned long)round(humidity*10.0))&0xFFFF)<<16;
+		bits |= (((unsigned long)abs(round(celsius*10.0)))&0x7FFF)<<0;
+		bits |= (celsius < 0 ? 1 : 0)<<25;
+	}
+
 	checksum += bits & (0xFF<<0);
 	checksum += bits & (0xFF<<8);
 	checksum += bits & (0xFF<<16);
 	checksum += bits & (0xFF<<24);
 	checksum &= 0xFF;
 
-	for (int i=7; i>=0; i--) {
-		signals_[j] = LOW;
-		durations_[j++] = 50;
-		signals_[j] = HIGH;
-		durations_[j++] = (checksum & (0x1<<i))?70:26;
-	}
 	for (int i=31; i>=0; i--) {
 		signals_[j] = LOW;
 		durations_[j++] = 50;
 		signals_[j] = HIGH;
 		durations_[j++] = (bits & (0x1<<i))?70:26;
+	}
+	for (int i=7; i>=0; i--) {
+		signals_[j] = LOW;
+		durations_[j++] = 50;
+		signals_[j] = HIGH;
+		durations_[j++] = (checksum & (0x1<<i))?70:26;
 	}
 }
 

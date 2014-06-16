@@ -1,6 +1,7 @@
 #ifndef WProgram_h
 #define WProgram_h
 
+#include <math.h>
 
 // Constants
 #define LOW		0
@@ -21,6 +22,6 @@ void delayMicroseconds(unsigned long microseconds);
 
 // functions that aren't really part of WProgram.h, but are needed for mocking purposes
 void setTime(unsigned long timeMillis, unsigned int remainderTimeMicros=0);
-void setReadData(unsigned short* signals, int* durations);
+void setSensorBits(float celsius, float humidity, int bitFormat);
 
 #endif

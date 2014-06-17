@@ -198,9 +198,11 @@ boolean DHT::prepareRead() {
 	// set flag to show we haven't gotten valid data from this read
 	validData_ = false;
 
-	// pull the pin high and wait 250 milliseconds for the sensor to chill out
+	// pull the pin high and wait 20 milliseconds for the sensor to chill out;
+	// the original library had a delay of 250 milliseconds here, but nothing
+	// in the datasheets or elsewhere seem to indicate that's necessary
 	digitalWrite(pin_, HIGH);
-	delay(250);
+	delay(20);
 
 	// now pull it low for ~20 milliseconds as the start signal
 	pinMode(pin_, OUTPUT);

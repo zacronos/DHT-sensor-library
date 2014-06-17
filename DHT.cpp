@@ -39,17 +39,12 @@ void DHT::begin() {
 
 boolean DHT::readSensorData() {
 	int8_t byteIndex, bitIndex;
-	unsigned long currentTime;
 	int8_t bit;
 
 	// Check if sensor was read in the last sample window, and if so return
 	// early to use the values from the last reading
-	currentTime = millis();
-	if (currentTime < lastReadTime_) {
-		// i.e. there was a rollover
-		lastReadTime_ = 0;
-	}
-	if (!firstReading_ && ((currentTime - lastReadTime_) < minSampleDelayMillis_)) {
+	// because these are unsigned values, this works even for rollovers
+	if (!firstReading_ && ((millis() - lastReadTime_) < minSampleDelayMillis_)) {
 		// we're not going to ask the sensor for more data, so just return a
 		// value indicating whether the data currently in the buffer is valid
 		return validData_;
@@ -81,7 +76,7 @@ boolean DHT::readSensorData() {
 	// turn interrupts back on
 	interrupts();
 
-	// test for data validity: data_[4] is a checksum byte, and should equal
+	// test for data validity: data_[0] is a checksum byte, and should equal
 	// the low byte of the sum of the other 4 bytes
 	validData_ = (data_[0] == ((data_[1] + data_[2] + data_[3] + data_[4]) & 0xFF));
 
@@ -110,6 +105,9 @@ float DHT::getTemperatureCelsius() {
 			// Example: for a 16-bit 1s-complement value, we would have
 			//     0x016F == 0b0000000101101111 ==  367
 			//     0x816F == 0b1000000101101111 == -367
+			// This is not how most computers store negative numbers, so we
+			// have to be careful to deal properly with the potential for
+			// 1s-complement negative numbers
 
 			// mask the sign bit off data_[2], then shift it left 8 bits, and
 			// drop data_[3] into the low-order byte
@@ -117,7 +115,7 @@ float DHT::getTemperatureCelsius() {
 
 			// Now put the correct sign on the float value
 			if (data_[2] & 0x80) {
-				temperature *= -1;
+				temperature = -temperature;
 			}
 			// raw data is in tenths of degrees, so scale the result
 			return temperature/10.0;
@@ -242,18 +240,12 @@ boolean DHT::prepareRead() {
 }
 
 int16_t DHT::timeSignalLength(uint8_t signalState) {
-	unsigned long currentTimeMicros;
 	unsigned long startTimeMicros = micros();
-	unsigned long timeWaiting;
 
 	while (digitalRead(pin_) == signalState) {
 		// watch how long we've been waiting
-		currentTimeMicros = micros();
-		// handle overflows
-		timeWaiting = (currentTimeMicros > startTimeMicros ?
-				currentTimeMicros - startTimeMicros :
-				ULONG_MAX - startTimeMicros + currentTimeMicros );
-		if (timeWaiting > 200) {
+		// because these are unsigned values, this works even for rollovers
+		if (micros() - startTimeMicros > 200) {
 			// there is a problem; the sensor should never leave us hanging
 			// for more than 80 microseconds, and even on devices with a
 			// micros() resolution of 8 microseconds, that means we shouldn't
@@ -265,12 +257,8 @@ int16_t DHT::timeSignalLength(uint8_t signalState) {
 	}
 
 	// get the final observed wait
-	currentTimeMicros = micros();
-	// handle overflows
-	timeWaiting = ( currentTimeMicros > startTimeMicros ?
-			currentTimeMicros - startTimeMicros :
-			ULONG_MAX - startTimeMicros + currentTimeMicros );
-	return (uint16_t)timeWaiting;
+	// because these are unsigned values, this works even for rollovers
+	return (uint16_t)(micros() - startTimeMicros);
 }
 
 int8_t DHT::readBit() {

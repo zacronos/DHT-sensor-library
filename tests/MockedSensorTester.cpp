@@ -13,12 +13,10 @@ void testCode(float celsius_, float humidity_, DHT &dht, unsigned short valueWid
 	setSensorValues(celsius_, humidity_, valueWidth);
 
 	float humidity = dht.readPercentHumidity();
-	// Read temperature as Celsius
 	float temperatureC = dht.readTemperatureCelsius();
-	// Read temperature as Fahrenheit
 	float temperatureF = dht.readTemperatureFahrenheit();
 
-	// Check if any reads failed and exit early (to try again).
+	// Check if any reads failed
 	if (isnan(humidity) || isnan(temperatureC) || isnan(temperatureF)) {
 		printf("Failed to read from DHT sensor!\n");
 		return;
@@ -38,7 +36,7 @@ int main(int argc, char** argv) {
 
 	// check the output of these functions to see if they match the input
 	// use this to check the heat index values:
-	// http://www.hpc.ncep.noaa.gov/html/heatindex.shtml
+	//     http://www.hpc.ncep.noaa.gov/html/heatindex.shtml
 
 	testCode(37.1, 30.4, dht16, 16);
 	delay(2000);

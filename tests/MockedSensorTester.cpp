@@ -31,7 +31,7 @@ void testCode(float celsius_, float humidity_, DHT &dht, unsigned short valueWid
 
 int main(int argc, char** argv) {
 
-	DHT dht16(2, DHT22);
+	DHT dht16(2, DHT_SENSOR_TYPE_DHT22);
 	dht16.begin();
 
 	// check the output of these functions to see if they match the input
@@ -49,7 +49,7 @@ int main(int argc, char** argv) {
 	// these should yield pretty much the same thing as above, but we'll lose
 	// the 10ths precision and the negative temperature will be all funky
 
-	DHT dht8(2, DHT11);
+	DHT dht8(2, DHT_SENSOR_TYPE_DHT11);
 	dht8.begin();
 	testCode(37.1, 30.4, dht8, 8);
 	delay(2000);

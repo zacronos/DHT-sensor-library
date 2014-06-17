@@ -20,11 +20,11 @@ DHT::DHT(uint8_t pin, uint8_t type) {
 	validData_ = false;
 
 	switch (type_) {
-		case DHT11:
+		case DHT_SENSOR_TYPE_DHT11:
 			minSampleDelayMillis_ = 1000;
 			break;
-		case DHT22:
-		case DHT21:
+		case DHT_SENSOR_TYPE_DHT21:
+		case DHT_SENSOR_TYPE_DHT22:
 			minSampleDelayMillis_ = 2000;
 			break;
 	}
@@ -60,7 +60,7 @@ boolean DHT::readSensorData() {
 
 	// get our data bits: they come out high-order bits first, so we have to
 	// write them into the buffer "backwards"
-	for (byteIndex = NUM_BYTES-1; byteIndex >= 0; byteIndex--) {
+	for (byteIndex = DHT_NUM_BYTES-1; byteIndex >= 0; byteIndex--) {
 		for (bitIndex = 7; bitIndex >= 0; bitIndex--) {
 			bit = readBit();
 			if (bit == -1) {
@@ -92,11 +92,11 @@ float DHT::getTemperatureCelsius() {
 
 	// different versions of the sensor yield data in different formats
 	switch (type_) {
-		case DHT11:
+		case DHT_SENSOR_TYPE_DHT11:
 			// data is in whole degrees, and fits in a byte, convenient!
 			return data_[2];
-		case DHT22:
-		case DHT21:
+		case DHT_SENSOR_TYPE_DHT21:
+		case DHT_SENSOR_TYPE_DHT22:
 			// NOTE: negative temperatures are transmitted using 1s-complement
 			// integer format: the highest-order bit indicates the sign of the
 			// number (0==positive, 1==negative), and the rest of the bits
@@ -135,11 +135,11 @@ float DHT::getPercentHumidity() {
 	}
 
 	switch (type_) {
-		case DHT11:
+		case DHT_SENSOR_TYPE_DHT11:
 			// data is in whole percents, and fits in a byte, convenient!
 			return data_[4];
-		case DHT22:
-		case DHT21:
+		case DHT_SENSOR_TYPE_DHT21:
+		case DHT_SENSOR_TYPE_DHT22:
 			// shift data_[4] left 8 bits, and drop data_[3] into the low-order byte
 			humidity = (data_[4] << 8) ^ data_[3];
 			// raw data is in tenths of a percent, so scale the result
@@ -198,11 +198,11 @@ boolean DHT::prepareRead() {
 	// set flag to show we haven't gotten valid data from this read
 	validData_ = false;
 
-	// pull the pin high and wait 20 milliseconds for the sensor to chill out;
+	// pull the pin high and wait for the sensor to chill out
 	// the original library had a delay of 250 milliseconds here, but nothing
-	// in the datasheets or elsewhere seem to indicate that's necessary
+	// in the datasheets or elsewhere seem to indicate that's necessary, so
 	digitalWrite(pin_, HIGH);
-	delay(20);
+	delay(firstReading_ ? DHT_FIRST_START_DELAY : DHT_LATER_START_DELAYS);
 
 	// now pull it low for ~20 milliseconds as the start signal
 	pinMode(pin_, OUTPUT);

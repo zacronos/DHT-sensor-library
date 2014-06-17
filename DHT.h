@@ -24,14 +24,19 @@
 
 // different versions of the sensor; pass one of these in as the "type"
 // parameter when constructing a DHT object
-#define DHT11  11
-#define DHT21  21
-#define AM2301 21
-#define DHT22  22
-#define AM2303 22
+#define DHT_SENSOR_TYPE_DHT11  11
+#define DHT_SENSOR_TYPE_DHT21  21
+#define DHT_SENSOR_TYPE_AM2301 21
+#define DHT_SENSOR_TYPE_DHT22  22
+#define DHT_SENSOR_TYPE_AM2303 22
+
+// milliseconds to wait on HIGH before sending the start signal the first time
+#define DHT_FIRST_START_DELAY 250
+// milliseconds to wait on HIGH before sending the start signal the other times
+#define DHT_LATER_START_DELAYS 20
 
 // how much data we want to read
-#define NUM_BYTES 5
+#define DHT_NUM_BYTES 5
 
 class DHT {
 

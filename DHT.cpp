@@ -97,17 +97,16 @@ float DHT::getTemperatureCelsius() {
 			return data_[2];
 		case DHT_SENSOR_TYPE_DHT21:
 		case DHT_SENSOR_TYPE_DHT22:
-			// NOTE: negative temperatures are transmitted using 1s-complement
+			// NOTE: negative temperatures are transmitted using a "signed"
 			// integer format: the highest-order bit indicates the sign of the
 			// number (0==positive, 1==negative), and the rest of the bits
 			// have the same value as they would for the absolute value of the
 			// number in question.
-			// Example: for a 16-bit 1s-complement value, we would have
+			// Example: for a 16-bit value, we would have
 			//     0x016F == 0b0000000101101111 ==  367
 			//     0x816F == 0b1000000101101111 == -367
 			// This is not how most computers store negative numbers, so we
-			// have to be careful to deal properly with the potential for
-			// 1s-complement negative numbers
+			// have to be careful to deal properly with these
 
 			// mask the sign bit off data_[2], then shift it left 8 bits, and
 			// drop data_[3] into the low-order byte
